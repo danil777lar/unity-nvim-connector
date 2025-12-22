@@ -20,7 +20,7 @@ namespace NvimUnity
         private static bool needSaveConfig = false;
         private static bool debugging = false;
 
-        private static string EditorName => "Neovim Code Editor";
+        private static string EditorName => "Neovim";
         private static string LauncherPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "arch-setup/utils/unity-nvim-launcher");
 
 
@@ -84,17 +84,75 @@ namespace NvimUnity
 
         public bool OpenProject(string path, int line, int column)
         {
-            string projectName = PlayerSettings.productName;
-            ProcessStartInfo psi = new ProcessStartInfo
+            if (string.IsNullOrEmpty(path))
             {
-                FileName = "bash",
-                Arguments = $"{LauncherPath} {projectName} \"{path}\" {line} {column}",
-                UseShellExecute = false,
-                CreateNoWindow = true,
-            };
-            Process.Start(psi);
+                path = RootFolder;
+            }
+            else if (!Project.SupportsFile(path))
+            {
+                return false;
+            }
 
-            return true;
+            if (!IsNvimUnityDefaultEditor())
+            {
+                return false;
+            }
+
+            if (!Project.Exists())
+            {
+                SyncAll();
+            }
+
+            if (line <= 0) line = 1;
+
+            if (!IsRunnigInNeovim)
+            {
+                try
+                {
+                    if (OS == "Windows")
+                    {
+                        var psi = new ProcessStartInfo
+                        {
+                            FileName = defaultApp,
+                            Arguments = $"{path} {line}",
+                            UseShellExecute = true,
+                            CreateNoWindow = false,
+                        };
+
+                        if(debugging)
+                        UnityEngine.Debug.Log($"[NvimUnity] Executing: {psi.FileName} {psi.Arguments}");
+                        Process.Start(defaultApp, $"{path} {line}");
+                    }
+                    else
+                    {
+                        // Original behavior for other OSes
+                        ProcessStartInfo psi = Utils.BuildProcessStartInfo(defaultApp, path, line);
+                        if(debugging)
+                        UnityEngine.Debug.Log($"[NvimUnity] Executing in terminal: {psi.FileName} {psi.Arguments}");
+                        Process.Start(psi);
+                    }
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    UnityEngine.Debug.LogError($"[NvimUnity] Failed to start App: {ex.Message}");
+                    return false;
+                }
+            }
+            else
+            {
+                string projectName = PlayerSettings.productName;
+                ProcessStartInfo psi = new ProcessStartInfo
+                {
+                    FileName = "bash",
+                    Arguments = $"{LauncherPath} {projectName} \"{path}\" {line} {column}",
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                };
+                Process.Start(psi);
+
+                return true;
+            }
         }
 
         public void SyncAll()
@@ -135,7 +193,7 @@ namespace NvimUnity
         {
             installation = new CodeEditor.Installation
             {
-                Name = "NEOVIM TEST",
+                Name = EditorName,
                 Path = LauncherPath,
             };
             return true;
