@@ -103,56 +103,19 @@ namespace NvimUnity
                 SyncAll();
             }
 
-            if (line <= 0) line = 1;
+            line = Math.Max(1, line);
 
-            if (!IsRunnigInNeovim)
+            string projectName = PlayerSettings.productName;
+            ProcessStartInfo psi = new ProcessStartInfo
             {
-                try
-                {
-                    if (OS == "Windows")
-                    {
-                        var psi = new ProcessStartInfo
-                        {
-                            FileName = defaultApp,
-                            Arguments = $"{path} {line}",
-                            UseShellExecute = true,
-                            CreateNoWindow = false,
-                        };
+                FileName = "bash",
+                Arguments = $"{LauncherPath} {projectName} \"{path}\" {line} {column}",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            };
+            Process.Start(psi);
 
-                        if(debugging)
-                        UnityEngine.Debug.Log($"[NvimUnity] Executing: {psi.FileName} {psi.Arguments}");
-                        Process.Start(defaultApp, $"{path} {line}");
-                    }
-                    else
-                    {
-                        // Original behavior for other OSes
-                        ProcessStartInfo psi = Utils.BuildProcessStartInfo(defaultApp, path, line);
-                        if(debugging)
-                        UnityEngine.Debug.Log($"[NvimUnity] Executing in terminal: {psi.FileName} {psi.Arguments}");
-                        Process.Start(psi);
-                    }
-                    return true;
-                }
-                catch (Exception ex)
-                {
-                    UnityEngine.Debug.LogError($"[NvimUnity] Failed to start App: {ex.Message}");
-                    return false;
-                }
-            }
-            else
-            {
-                string projectName = PlayerSettings.productName;
-                ProcessStartInfo psi = new ProcessStartInfo
-                {
-                    FileName = "bash",
-                    Arguments = $"{LauncherPath} {projectName} \"{path}\" {line} {column}",
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                };
-                Process.Start(psi);
-
-                return true;
-            }
+            return true;
         }
 
         public void SyncAll()
