@@ -93,11 +93,6 @@ namespace NvimUnity
                 return false;
             }
 
-            if (!IsNvimUnityDefaultEditor())
-            {
-                return false;
-            }
-
             if (!Project.Exists())
             {
                 SyncAll();
