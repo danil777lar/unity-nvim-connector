@@ -100,7 +100,7 @@ namespace NvimUnity
 
             line = Math.Max(1, line);
 
-            string projectName = PlayerSettings.productName;
+            string projectName = PlayerSettings.productName.Replace(" ", "_");
             ProcessStartInfo psi = new ProcessStartInfo
             {
                 FileName = "bash",
